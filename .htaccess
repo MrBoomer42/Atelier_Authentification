@@ -1,4 +1,4 @@
 AuthName "Acces Restreint"
 AuthType Basic
-AuthUserFile /home/raul65/www/atelier1/.htpasswd
+AuthUserFile /home/admin/www/atelier1/.htpasswd
 Require valid-user
