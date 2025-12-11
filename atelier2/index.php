@@ -1,27 +1,53 @@
 <?php
-// Démarrer une session utilisateur qui sera en mesure de pouvoir gérer les Cookies
+// Démarre la session (Toujours en premier !)
 session_start();
 
-// Vérifier si l'utilisateur est déjà en possession d'un cookie valide (cookie authToken ayant le contenu 12345)
-// Si l'utilisateur possède déjà ce cookie, il sera redirigé automatiquement vers la page home.php
-// Dans le cas contraire il devra s'identifier.
-if (isset($_COOKIE['authToken']) && $_COOKIE['authToken'] === '12345') {
-    header('Location: page_admin.php');
-    exit();
+// --- EXERCICE 2 : COMPTEUR DE VISITES ---
+// On vérifie si le compteur existe, sinon on l'initialise
+if (!isset($_SESSION['visites'])) {
+    $_SESSION['visites'] = 1;
+} else {
+    $_SESSION['visites']++;
 }
 
-// Gérer la soumission du formulaire
+// Redirection intelligente si déjà connecté
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    // Si c'est un admin, on l'envoie chez les admins
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        header('Location: page_admin.php');
+        exit();
+    }
+    // Si c'est un user, on l'envoie chez les users (Exercice 1)
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'user') {
+        header('Location: page_user.php');
+        exit();
+    }
+}
+
+// Gérer le formulaire de connexion
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Vérification simple du username et de son password.
-    // Si ok alors on initialise le cookie sur le poste de l'utilisateur 
+    // --- EXERCICE 1 : Double vérification ---
+   
+    // CAS 1 : Admin
     if ($username === 'admin' && $password === 'secret') {
-        setcookie('authToken', '12345', time() + 3600, '/', '', false, true); // Le Cookie est initialisé et valable pendant 1 heure (3600 secondes) 
-        header('Location: page_admin.php'); // L'utilisateur est dirigé vers la page home.php
+        $_SESSION['loggedin'] = true;
+        $_SESSION['username'] = $username;
+        $_SESSION['role'] = 'admin'; // On retient son rôle
+        header('Location: page_admin.php');
         exit();
-    } else {
+    }
+    // CAS 2 : User (Nouveau !)
+    elseif ($username === 'user' && $password === 'utilisateur') {
+        $_SESSION['loggedin'] = true;
+        $_SESSION['username'] = $username;
+        $_SESSION['role'] = 'user'; // On retient son rôle
+        header('Location: page_user.php');
+        exit();
+    }
+    else {
         $error = "Nom d'utilisateur ou mot de passe incorrect.";
     }
 }
@@ -31,15 +57,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion</title>
+    <title>Connexion Atelier 3</title>
 </head>
 <body>
-    <h1>Atelier authentification par Cookie</h1>
-    <h3>La page <a href="page_admin.php">page_admin.php</a> est inaccéssible tant que vous ne vous serez pas connecté avec le login 'admin' et mot de passe 'secret'</h3>
+    <h1>Atelier authentification par Session</h1>
+   
+    <div style="background-color: #f0f0f0; padding: 10px; border: 1px solid #ccc; margin-bottom: 20px;">
+        <strong>Statistique :</strong> Vous avez visité cette page d'accueil <?php echo $_SESSION['visites']; ?> fois.
+    </div>
+
+    <h3>La page <a href="page_admin.php">page_admin.php</a> est réservée à 'admin'.</h3>
+    <h3>La page <a href="page_user.php">page_user.php</a> est réservée à 'user'.</h3>
+
+    <?php if (isset($error)) echo "<p style='color:red'>$error</p>"; ?>
+
     <form method="POST" action="">
         <label for="username">Nom d'utilisateur :</label>
-        <input type="text" id="username" name="username" required>
+        <input type="text" id="username" name="username" required placeholder="admin ou user">
         <br><br>
         <label for="password">Mot de passe :</label>
         <input type="password" id="password" name="password" required>
